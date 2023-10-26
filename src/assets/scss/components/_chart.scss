@@ -1,0 +1,12 @@
+.chart-wrapper {
+  display: grid;
+  grid-template-columns: 30px 1fr 30px;
+  gap: 1rem;
+  align-items: center;
+
+  i {
+    font-size: 24px;
+    color: #1e2c58;
+    cursor: pointer;
+  }
+}

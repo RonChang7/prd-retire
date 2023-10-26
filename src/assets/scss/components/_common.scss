@@ -1,0 +1,22 @@
+.banner {
+  display: flex;
+  &__title {
+    padding: 12px;
+    p {
+      margin: 8px 0;
+      @media screen and (min-width: 768px) {
+        width: 90%;
+      }
+    }
+  }
+  img {
+    display: none;
+    @media screen and (min-width: 768px) {
+      display: block;
+      width: 32%;
+    }
+  }
+}
+.userInfo {
+  padding-top: 30px;
+}

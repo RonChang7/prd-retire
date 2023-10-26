@@ -1,0 +1,36 @@
+*,
+*::before,
+**::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 62.5%;
+}
+
+select {
+  appearance: none;
+  -moz-appearance: none; /* Firefox */
+  -webkit-appearance: none; /* Safari and Chrome */
+}
+
+input[type='radio'] {
+  /* Add if not using autoprefixer */
+  -webkit-appearance: none;
+  appearance: none;
+  /* For iOS < 15 to remove gradient background */
+  background-color: #fff;
+  /* Not removed via appearance */
+  margin: 0;
+  position: absolute;
+  z-index: -1;
+}
+
+select {
+  background-image: none;
+  background-color: #fff;
+}
+
+::placeholder {
+  color: #ccc;
+}
