@@ -7,8 +7,9 @@
     </p>
     <template v-if="props.type === 'number'">
       <input
-        class="form-md outline_w check_change"
+        class="form-md outline_w"
         type="number"
+        :placeholder="placeholder"
         v-model="val"
         @blur="$emit('setValue', val)"
       />
@@ -31,12 +32,16 @@
 </template>
 
 <script setup>
-import { ref, defineProps } from 'vue'
+import { ref } from 'vue'
 const props = defineProps({
   type: String,
   title: String,
   subTitle: String,
   unit: String,
+  placeholder: {
+    type: Number,
+    default: 0,
+  },
 })
 const val = ref(null)
 const btnList = [
@@ -45,48 +50,4 @@ const btnList = [
 ]
 </script>
 
-<style lang="scss" scoped>
-.formItem {
-  width: 100%;
-  color: white;
-  background-color: $color-primary-blue;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  &:last-of-type {
-    margin-bottom: 0;
-  }
-
-  p {
-    width: 55%;
-  }
-  input,
-  .selectItem {
-    width: 45%;
-    color: #ffffff;
-  }
-  label::after {
-    color: #ffffff;
-    right: 10px;
-    top: -10px;
-  }
-  .selectItem {
-    display: flex;
-    justify-content: space-between;
-    &__btn {
-      width: 48%;
-      height: 36px;
-      border-radius: $border-radius;
-      border: 1px solid white;
-      color: #ffffff;
-      background-color: $color-primary-blue;
-    }
-    &__btn--active {
-      border-radius: $border-radius;
-      color: $color-primary-blue;
-      background-color: #ffffff;
-    }
-  }
-}
-</style>
+<style lang="scss" scoped></style>
