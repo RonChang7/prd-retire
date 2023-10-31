@@ -184,7 +184,7 @@ const legendList = reactive([
           ></formInput>
         </div>
       </div>
-      <div class="retire col-12 col-md-4 col-lg-4 col-xl-3">
+      <div class="retire col-12 col-md-8 col-lg-8 col-xl-9">
         <h4>退休後每個月想花多少錢？</h4>
         <div class="retire__wrap">
           <div class="retire__subWrap">
@@ -236,87 +236,93 @@ const legendList = reactive([
     </div>
     <div id="checkResult" v-show="toggleResult" class="result inner III-block-white">
       <h4>查看你的結果</h4>
-      <div class="result__block col-12 col-md-6">
-        <div class="result__btns">
-          <button
-            class="result__btn"
-            :class="{ 'result__btn--active': result.retirePay === 'month' }"
-            @click="result.retirePay = 'month'"
-          >
-            退休後每月領
-          </button>
-          <button
-            class="result__btn"
-            :class="{ 'result__btn--active': result.retirePay === 'all' }"
-            @click="result.retirePay = 'all'"
-          >
-            退休後一次領
-          </button>
-        </div>
-        <div class="result__wages III-flex">
-          <span>每月薪資：</span>
-          <div class="form_item">
-            <input class="form-md" type="number" placeholder="0" v-model="result.wagePerMonth" />
-            <label data-domain="元/月"></label>
-          </div>
-        </div>
-        <div class="result__prepared prepared">
-          <div class="prepared__block" v-for="(item, index) in preparedList" :key="index">
-            <div
-              class="prepared__toggleItem col-12 col-md-5"
-              @click="item.toggle = !item.toggle"
+      <div class="III-flex result__wrap">
+        <div class="result__block col-12 col-md-6">
+          <div class="result__btns">
+            <button
+              class="result__btn"
+              :class="{ 'result__btn--active': result.retirePay === 'month' }"
+              @click="result.retirePay = 'month'"
             >
-              <p>{{ item.title }}</p>
-              <p v-if="index === 0" class="prepared__money">{{ preparedNow }}元</p>
-              <p v-else class="prepared__money">{{ preparedAnnual }}元</p>
+              退休後每月領
+            </button>
+            <button
+              class="result__btn"
+              :class="{ 'result__btn--active': result.retirePay === 'all' }"
+              @click="result.retirePay = 'all'"
+            >
+              退休後一次領
+            </button>
+          </div>
+          <div class="result__wages III-flex">
+            <span>每月薪資：</span>
+            <div class="form_item">
+              <input class="form-md" type="number" placeholder="0" v-model="result.wagePerMonth" />
+              <label data-domain="元/月"></label>
             </div>
-            <div v-if="item.toggle" class="prepared__inputBlock">
-              <div v-for="el in item.inputList" :key="index" class="prepared__inputItem form_item">
-                <p>{{ el.name }}:</p>
-                <input class="form-md" type="number" min="0" step="1000" v-model="el.value" />
-                <label :data-domain="el.unit"></label>
+          </div>
+          <div class="result__prepared prepared">
+            <div class="prepared__block" v-for="(item, index) in preparedList" :key="index">
+              <div
+                class="prepared__toggleItem col-12 col-md-12"
+                @click="item.toggle = !item.toggle"
+              >
+                <p>{{ item.title }}</p>
+                <p v-if="index === 0" class="prepared__money">{{ preparedNow }}元</p>
+                <p v-else class="prepared__money">{{ preparedAnnual }}元</p>
+              </div>
+              <div v-if="item.toggle" class="prepared__inputBlock">
+                <div
+                  v-for="el in item.inputList"
+                  :key="index"
+                  class="prepared__inputItem form_item"
+                >
+                  <p>{{ el.name }}:</p>
+                  <input class="form-md" type="number" min="0" step="1000" v-model="el.value" />
+                  <label :data-domain="el.unit"></label>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="result__block chart col-12 col-md-6">
-        <div class="chart__wrap">
-          <div class="chart__pie">恰特</div>
-          <div class="chart__percentage">
-            <h5>退休完成度</h5>
-            <p>{{ completePercentage }}%</p>
-          </div>
-        </div>
-        <ul class="chart__legendList">
-          <li v-for="(item, index) in legendList" :key="index">
-            <div>
-              <span class="legend" :style="`background:${item.color}`"> </span>
-              <span>{{ item.name }}</span>
+        <div class="result__block chart col-12 col-md-6">
+          <div class="chart__wrap">
+            <div class="chart__pie">恰特</div>
+            <div class="chart__percentage">
+              <h5>退休完成度</h5>
+              <p>{{ completePercentage }}%</p>
             </div>
-            <p>{{ item.value }} 元</p>
-          </li>
-        </ul>
+          </div>
+          <ul class="chart__legendList">
+            <li v-for="(item, index) in legendList" :key="index">
+              <div>
+                <span class="legend" :style="`background:${item.color}`"> </span>
+                <span>{{ item.name }}</span>
+              </div>
+              <p>{{ item.value }} 元</p>
+            </li>
+          </ul>
+        </div>
       </div>
-    </div>
-    <div class="shape-triangle">
-      <div class="triangle"></div>
-    </div>
-    <div class="result_data--btm">
-      <div class="III-block-bluemain">
-        <div class="III-wrap">
-          <div class="III-flex">
-            <ul>
-              <li class="data_block col-12">
-                <p>您與理想生活的差距</p>
-                <span class="stillLackAmount">0</span>元
-              </li>
-              <div class="line"></div>
-              <li class="data_block col-12">
-                <p>建議您每月再存</p>
-                <span id="saveAmountPerMonth">0</span>元
-              </li>
-            </ul>
+      <div class="shape-triangle">
+        <div class="triangle"></div>
+      </div>
+      <div class="result_data--btm">
+        <div class="III-block-bluemain">
+          <div class="III-wrap">
+            <div class="III-flex">
+              <ul>
+                <li class="data_block col-12">
+                  <p>您與理想生活的差距</p>
+                  <span class="stillLackAmount">0</span>元
+                </li>
+                <div class="line"></div>
+                <li class="data_block col-12">
+                  <p>建議您每月再存</p>
+                  <span id="saveAmountPerMonth">0</span>元
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -336,8 +342,4 @@ const legendList = reactive([
   </div>
 </template>
 
-<style scoped lang="scss">
-.wrap {
-  padding: 60px 0;
-}
-</style>
+<style scoped lang="scss"></style>
