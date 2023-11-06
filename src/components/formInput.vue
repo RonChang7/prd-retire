@@ -21,8 +21,8 @@
           v-for="(item, index) in btnList"
           :key="index"
           class="selectItem__btn"
-          :class="{ 'selectItem__btn--active': val === item.value }"
-          @click="$emit('setValue', item.value), (val = item.value)"
+          :class="{ 'selectItem__btn--active': btnVal === item.value }"
+          @click="$emit('setValue', item.value)"
         >
           <i class="fas" :class="item.name"></i>
         </button>
@@ -38,16 +38,14 @@ const props = defineProps({
   title: String,
   subTitle: String,
   unit: String,
+  btnList: Array,
+  btnVal: String,
   placeholder: {
     type: Number,
     default: 0,
   },
 })
 const val = ref(null)
-const btnList = [
-  { name: 'fa-mars', value: 1 },
-  { name: 'fa-venus', value: 2 },
-]
 </script>
 
 <style lang="scss" scoped></style>

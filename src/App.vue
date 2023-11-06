@@ -7,10 +7,10 @@ const form = reactive({
   age: 0,
   retireAge: 0,
   workAge: 0,
-  sex: 1,
+  sex: 'MALE',
   //退休後每個月想花多少
   lifePlan: 1,
-  perMoneySpend: 0,
+  perMoneySpend: 40000,
   freeSpend: 0,
   retirePlan: 'once',
   salary: 0,
@@ -23,6 +23,10 @@ const form = reactive({
   annualRent: 0,
   annualOthers: 0,
 })
+const btnList = [
+  { name: 'fa-mars', value: 'MALE' },
+  { name: 'fa-venus', value: 'FEMALE' },
+]
 const lifePlanType = [
   { id: 1, title: '平靜樂活人生包', amount: 40000 },
   { id: 2, title: '偶爾炫耀歡樂包', amount: 70000 },
@@ -39,18 +43,32 @@ const setFormValue = (key, value) => {
     form.perMoneySpend = value === 4 ? form.freeSpend : lifePlanType[value - 1].amount
   }
   form[key] = value
-  // console.log('form:', form)
+  console.log('form:', form)
+  getCalculationFromApi()
 }
 watch(
   () => form.freeSpend,
   (newVal) => {
-    form.lifePlan = newVal < 70000 ? 1 : newVal >= 70000 && newVal < 100000 ? 2 : 3
+      form.lifePlan = newVal < 70000 ? 1 : newVal >= 70000 && newVal < 100000 ? 2 : 3
+      form.perMoneySpend = newVal
+      getCalculationFromApi()
+    
   }
 )
-
-const getCalculationFromApi = () => {
-  axios.get('https://3i-life.com.tw/product/calculationRetireSimple')
+// TODO:呼喚時機：現在年齡、預計退休年齡、性別、退休後每個月想花多少錢變動時
+const getCalculationFromApi = async () => {
+  const url = `https://3i-life.com.tw/product/calculationRetireSimple?gender=${form.sex}&estimateRetireAge=${form.retireAge}&wantCostAfterRetirePerMonth=${form.perMoneySpend}`
+  await axios
+    .get(url)
+    .then((res) => {
+      console.log(res)
+      result.costAfterRetire = res.data
+    })
+    .catch((err) => {
+      console.log(err)
+    })
 }
+
 const result = reactive({
   costAfterRetire: 0,
   wagePerMonth: 0,
@@ -109,7 +127,6 @@ const preparedList = reactive([
 ])
 const preparedNow = computed(() => {
   return preparedList[0].inputList.reduce((sum, b) => {
-    console.log('sum, b:', sum, b)
     return sum + b.value
   }, 0)
 })
@@ -151,8 +168,8 @@ const legendList = reactive([
           『準備開始倒數 10,9,8,7......糟糕，燃料似乎嚴重不足』 馬上開啟你的退休儀錶板，使用全新搭載
           Triple-I 所研發的超級計算機！！
         </p>
+        <img src="./assets/images/T-fuel.svg" alt="T-fuel" />
       </div>
-      <img src="./assets/images/T-fuel.svg" alt="T-fuel" />
     </div>
     <div class="formInfo inner">
       <div class="userInfo col-12 col-md-4 col-lg-4 col-xl-3">
@@ -180,6 +197,8 @@ const legendList = reactive([
           <formInput
             :title="'您的性別'"
             :type="'select'"
+            :btn-list="btnList"
+            :btn-val="form.sex"
             @setValue="setFormValue('sex', $event)"
           ></formInput>
         </div>

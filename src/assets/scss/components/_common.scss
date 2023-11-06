@@ -36,7 +36,7 @@
       p {
         margin: 8px 0;
         @media screen and (min-width: 768px) {
-          width: 90%;
+          width: 65%;
         }
       }
     }
@@ -44,7 +44,10 @@
       display: none;
       @media screen and (min-width: 768px) {
         display: block;
-        width: 32%;
+        position: absolute;
+        top: 12px;
+        right: 8px;
+        width: 30%;
       }
     }
   }
@@ -52,6 +55,11 @@
     padding-top: 30px;
     @media screen and (min-width: 768px) {
       display: flex;
+      padding-top: 40px;
+    }
+    @media screen and (min-width: 1280px) {
+      padding-top: 60px;
+      
     }
     .userInfo {
       padding-bottom: 30px;
