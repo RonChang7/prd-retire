@@ -1,18 +1,21 @@
 <script setup>
+import Pie from '@/components/Pie.vue'
 import formInput from './components/formInput.vue'
-import { watch, computed, ref, reactive } from 'vue'
-import axios from 'axios'
+import { watch, computed, ref, reactive, nextTick } from 'vue'
+import { useStore } from './stores/store'
+
+const store = useStore()
 const form = reactive({
   //個人資料
-  age: 0,
-  retireAge: 0,
-  workAge: 0,
+  age: 33,
+  retireAge: 44,
+  workAge: 33,
   sex: 'MALE',
   //退休後每個月想花多少
   lifePlan: 1,
   perMoneySpend: 40000,
   freeSpend: 0,
-  retirePlan: 'once',
+  payType: 'ONCE',
   salary: 0,
   //目前累積的退休準備
   nowSaves: 0,
@@ -37,49 +40,73 @@ const lifePlanInfo = [
   { food: '餐廳美食', transport: '擁有私家車', health: '自費雙人病房', travel: '國外輕旅行' },
   { food: '米其林餐廳', transport: '私人司機接送', health: '自費單人病房', travel: '國外秘境探險' },
 ]
-const setFormValue = (key, value) => {
+const setFormValue = async (key, value) => {
   if (form[key] === value) return
   if (key === 'lifePlan') {
     form.perMoneySpend = value === 4 ? form.freeSpend : lifePlanType[value - 1].amount
   }
   form[key] = value
-  console.log('form:', form)
-  getCalculationFromApi()
+
+  const res = await store.getCostAfterRetire(form)
+  if (res) result.costAfterRetire = res
 }
 watch(
   () => form.freeSpend,
-  (newVal) => {
-      form.lifePlan = newVal < 70000 ? 1 : newVal >= 70000 && newVal < 100000 ? 2 : 3
-      form.perMoneySpend = newVal
-      getCalculationFromApi()
-    
+  async (newVal) => {
+    form.lifePlan = newVal < 70000 ? 1 : newVal >= 70000 && newVal < 100000 ? 2 : 3
+    form.perMoneySpend = newVal
+
+    const res = await store.getCostAfterRetire(form)
+    if (res) result.costAfterRetire = res
   }
 )
-// TODO:呼喚時機：現在年齡、預計退休年齡、性別、退休後每個月想花多少錢變動時
-const getCalculationFromApi = async () => {
-  const url = `https://3i-life.com.tw/product/calculationRetireSimple?gender=${form.sex}&estimateRetireAge=${form.retireAge}&wantCostAfterRetirePerMonth=${form.perMoneySpend}`
-  await axios
-    .get(url)
-    .then((res) => {
-      console.log(res)
-      result.costAfterRetire = res.data
-    })
-    .catch((err) => {
-      console.log(err)
-    })
-}
 
 const result = reactive({
   costAfterRetire: 0,
-  wagePerMonth: 0,
-  retirePay: 'all',
+  currentSalary: 0,
+  stillLackAmount: 0,
+  saveAmountPerMonth: 0,
 })
+watch(
+  () => form.payType,
+  (newVal) => {
+    if (newVal) {
+      getMoreDetail()
+    }
+  }
+)
+watch(
+  () => form.salary,
+  (newVal) => {
+    if (newVal > 0) {
+      getMoreDetail()
+    }
+  }
+)
+// TODO:開發用先預設打開
 const toggleResult = ref(false)
-const getMoreDetail = () => {
-  if (!toggleResult.value) toggleResult.value = true
-  // TODO:滑動調整 display:none 或是不存在時有問題
-  console.log(document.querySelector('#checkResult'))
-  document.documentElement.scrollTop = document.querySelector('#checkResult').offsetTop
+const getMoreDetail = async () => {
+  const res = await store.getCalculation(form, preparedNow.value, preparedAnnual.value)
+  if (!res) return
+  if (res.errorMessage.length) return alert(res.errorMessage)
+  const { laborProtectionAmount, laborRebateAmount, stillLackAmount, saveAmountPerMonth } = res
+  result.stillLackAmount = stillLackAmount
+  result.saveAmountPerMonth = saveAmountPerMonth
+  const mappingValues = [preparedNow, laborProtectionAmount, laborRebateAmount, stillLackAmount]
+  store.legendList.forEach((item, index) => {
+    item.value = mappingValues[index]
+  })
+
+  if (!toggleResult.value) {
+    toggleResult.value = true
+  }
+  nextTick(() => {
+    window.scrollTo({
+      top: document.querySelector('#checkResult').offsetTop - 100,
+      behavior: 'smooth',
+    })
+    console.log('store.legendList:', store.legendList)
+  })
 }
 const preparedList = reactive([
   {
@@ -130,34 +157,28 @@ const preparedNow = computed(() => {
     return sum + b.value
   }, 0)
 })
+watch(
+  () => preparedNow.value,
+  (newVal) => {
+    if (newVal > 0) {
+      getMoreDetail()
+    }
+  }
+)
 const preparedAnnual = computed(() => {
   return preparedList[1].inputList.reduce((sum, b) => {
     return sum + b.value
   }, 0)
 })
+watch(
+  () => preparedAnnual.value,
+  (newVal) => {
+    if (newVal > 0) {
+      getMoreDetail()
+    }
+  }
+)
 const completePercentage = computed(() => 0)
-const legendList = reactive([
-  {
-    name: '已准備退休金總額',
-    color: '#ff6a82',
-    value: 0,
-  },
-  {
-    name: '勞保',
-    color: '#ffba00',
-    value: 0,
-  },
-  {
-    name: '勞退',
-    color: '#c3275c',
-    value: 0,
-  },
-  {
-    name: '退休金缺口',
-    color: '#1e2b58',
-    value: 0,
-  },
-])
 </script>
 <template>
   <div class="wrap">
@@ -260,15 +281,15 @@ const legendList = reactive([
           <div class="result__btns">
             <button
               class="result__btn"
-              :class="{ 'result__btn--active': result.retirePay === 'month' }"
-              @click="result.retirePay = 'month'"
+              :class="{ 'result__btn--active': form.payType === 'MONTH' }"
+              @click="form.payType = 'MONTH'"
             >
               退休後每月領
             </button>
             <button
               class="result__btn"
-              :class="{ 'result__btn--active': result.retirePay === 'all' }"
-              @click="result.retirePay = 'all'"
+              :class="{ 'result__btn--active': form.payType === 'ONCE' }"
+              @click="form.payType = 'ONCE'"
             >
               退休後一次領
             </button>
@@ -276,7 +297,7 @@ const legendList = reactive([
           <div class="result__wages III-flex">
             <span>每月薪資：</span>
             <div class="form_item">
-              <input class="form-md" type="number" placeholder="0" v-model="result.wagePerMonth" />
+              <input class="form-md" type="number" placeholder="0" v-model="form.salary" />
               <label data-domain="元/月"></label>
             </div>
           </div>
@@ -304,21 +325,16 @@ const legendList = reactive([
             </div>
           </div>
         </div>
-        <div class="result__block chart col-12 col-md-6">
-          <div class="chart__wrap">
-            <div class="chart__pie">恰特</div>
-            <div class="chart__percentage">
-              <h5>退休完成度</h5>
-              <p>{{ completePercentage }}%</p>
-            </div>
-          </div>
+        <div class="result__block chart col-12 col-md-6 w-100">
+          <Pie></Pie>
+          <!-- <Chart class="chart__wrap" :trend-data="store.legendList"></Chart> -->
           <ul class="chart__legendList">
-            <li v-for="(item, index) in legendList" :key="index">
+            <li v-for="(el, index) in store.legendList" :key="index">
               <div>
-                <span class="legend" :style="`background:${item.color}`"> </span>
-                <span>{{ item.name }}</span>
+                <span class="legend" :style="`background:${el.itemStyle.color}`"> </span>
+                <span>{{ el.name }}</span>
               </div>
-              <p>{{ item.value }} 元</p>
+              <p>{{ el.value }} 元</p>
             </li>
           </ul>
         </div>
@@ -333,12 +349,14 @@ const legendList = reactive([
               <ul>
                 <li class="data_block col-12">
                   <p>您與理想生活的差距</p>
-                  <span class="stillLackAmount">0</span>元
+                  <span class="stillLackAmount">{{ result.stillLackAmount }}</span
+                  >元
                 </li>
                 <div class="line"></div>
                 <li class="data_block col-12">
                   <p>建議您每月再存</p>
-                  <span id="saveAmountPerMonth">0</span>元
+                  <span id="saveAmountPerMonth">{{ result.saveAmountPerMonth }}</span
+                  >元
                 </li>
               </ul>
             </div>
