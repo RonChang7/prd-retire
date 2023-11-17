@@ -5,34 +5,25 @@ import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    vue(),
-  ],
+  plugins: [vue()],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
   },
-  base: import.meta.Mode === 'production' ? '/resources/insurance-search/' : '/',
+  base: import.meta.Mode === 'production' ? '/resources/prd-retire/' : '/',
   server: {
     port: 1000,
     host: '0.0.0.0',
-    proxy: {
-      '/api': {
-        target: 'https://wwwot.smartbeb.com.tw',
-        changeOrigin: true,
-        ws: true,
-        secure: false
-      }
-    }
   },
   build: {
-    outDir: import.meta.Mode === 'production' ? path.resolve('../../resources/insurance-search') : 'dist',
+    outDir:
+      import.meta.Mode === 'production' ? path.resolve('../../resources/prd-reture') : 'dist',
     assetsDir: '',
     rollupOptions: {
       input: {
         // index頁
-        index: path.resolve(__dirname, 'index.html')
+        index: path.resolve(__dirname, 'index.html'),
       },
       output: {
         manualChunks: (id) => {
@@ -54,8 +45,8 @@ export default defineConfig({
         // js 入口檔案
         entryFileNames: `js/[name].js`,
         // js、css 編譯檔名規則
-        assetFileNames: '[ext]/[name].[ext]'
-      }
-    }
-  }
+        assetFileNames: '[ext]/[name].[ext]',
+      },
+    },
+  },
 })
