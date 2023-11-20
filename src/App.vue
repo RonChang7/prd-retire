@@ -7,6 +7,7 @@ import { useStore } from './stores/store'
 const store = useStore()
 const form = reactive({
   //個人資料
+  //TODO:開發用先預設 33歲    44歲    33歲
   age: 33,
   retireAge: 44,
   workAge: 33,
@@ -63,7 +64,6 @@ watch(
 
 const result = reactive({
   costAfterRetire: 0,
-  currentSalary: 0,
   stillLackAmount: 0,
   saveAmountPerMonth: 0,
 })
@@ -90,12 +90,17 @@ const getMoreDetail = async () => {
   if (!res) return
   if (res.errorMessage.length) return alert(res.errorMessage)
   const { laborProtectionAmount, laborRebateAmount, stillLackAmount, saveAmountPerMonth } = res
-  result.stillLackAmount = stillLackAmount
-  result.saveAmountPerMonth = saveAmountPerMonth
+  result.stillLackAmount = stillLackAmount > 0 ? stillLackAmount : 0
+  result.saveAmountPerMonth = saveAmountPerMonth > 0 ? saveAmountPerMonth : 0
   const mappingValues = [preparedNow, laborProtectionAmount, laborRebateAmount, stillLackAmount]
   store.legendList.forEach((item, index) => {
     item.value = mappingValues[index]
   })
+  let total = store.legendList.reduce((sum, b) => {
+    return sum + b.value
+  }, 0)
+  let ratio = (total - store.legendList[3].value) / total
+  console.log('ratio:', ratio)
 
   if (!toggleResult.value) {
     toggleResult.value = true
@@ -105,7 +110,8 @@ const getMoreDetail = async () => {
       top: document.querySelector('#checkResult').offsetTop - 100,
       behavior: 'smooth',
     })
-    console.log('store.legendList:', store.legendList)
+
+    animateValue(Math.round(ratio * 100))
   })
 }
 const preparedList = reactive([
@@ -116,16 +122,19 @@ const preparedList = reactive([
       {
         name: '儲蓄',
         value: 0,
+        max: 100000000,
         unit: '元',
       },
       {
         name: '投資',
         value: 0,
+        max: 100000000,
         unit: '元',
       },
       {
         name: '其他',
         value: 0,
+        max: 100000000,
         unit: '元',
       },
     ],
@@ -137,16 +146,19 @@ const preparedList = reactive([
       {
         name: '年金',
         value: 0,
+        max: 50000000,
         unit: '元/年',
       },
       {
         name: '房租',
         value: 0,
+        max: 50000000,
         unit: '元/年',
       },
       {
         name: '其他',
         value: 0,
+        max: 50000000,
         unit: '元/年',
       },
     ],
@@ -178,7 +190,23 @@ watch(
     }
   }
 )
-const completePercentage = computed(() => 0)
+const completePercentage = ref(0)
+// 數字從0開始跑的動畫 卡卡的
+const animateValue = (end) => {
+  console.log('end:', end)
+  if (end === 0) return
+  if (end >= 100) return (completePercentage.value = 100)
+  let current = 0
+  let increment = end >= 1 ? 1 : -1
+  let stepTime = Math.abs(Math.floor(1000 / end))
+  let timer = setInterval(function () {
+    current += increment
+    completePercentage.value = current
+    if (current === end) {
+      clearInterval(timer)
+    }
+  }, stepTime)
+}
 </script>
 <template>
   <div class="wrap">
@@ -198,20 +226,25 @@ const completePercentage = computed(() => 0)
         <div class="III-block-bluemain III-flex itemBlock">
           <formInput
             :title="'現在年齡'"
-            :type="'number'"
+            :type="'number-outline'"
+            :max="60"
             @setValue="setFormValue('age', $event)"
             :unit="'歲'"
           ></formInput>
           <formInput
             :title="'預計退休年齡'"
             :subTitle="'通常退休為65歲'"
-            :type="'number'"
+            :min="35"
+            :max="75"
+            :type="'number-outline'"
             @setValue="setFormValue('retireAge', $event)"
             :unit="'歲'"
           ></formInput>
           <formInput
             :title="'開始工作年齡'"
-            :type="'number'"
+            :type="'number-outline'"
+            :min="18"
+            :max="40"
             @setValue="setFormValue('workAge', $event)"
             :unit="'歲'"
           ></formInput>
@@ -241,8 +274,15 @@ const completePercentage = computed(() => 0)
             <div class="retire__btn">
               <span>人生自己填</span>
               <div class="form_item">
-                <input class="form-md" type="number" placeholder="0" v-model="form.freeSpend" />
-                <label data-domain="元/月"></label>
+                <formInput
+                  :type="'number'"
+                  :placeholder="0"
+                  :min="5000"
+                  :max="600000"
+                  :step="1000"
+                  :unit="'元/月'"
+                  v-model="form.freeSpend"
+                ></formInput>
               </div>
             </div>
           </div>
@@ -295,10 +335,17 @@ const completePercentage = computed(() => 0)
             </button>
           </div>
           <div class="result__wages III-flex">
-            <span>每月薪資：</span>
             <div class="form_item">
-              <input class="form-md" type="number" placeholder="0" v-model="form.salary" />
-              <label data-domain="元/月"></label>
+              <formInput
+                :title="'每月薪資'"
+                :type="'number'"
+                :placeholder="0"
+                :min="22000"
+                :max="600000"
+                :step="1000"
+                :unit="'元/月'"
+                v-model="form.salary"
+              ></formInput>
             </div>
           </div>
           <div class="result__prepared prepared">
@@ -317,17 +364,23 @@ const completePercentage = computed(() => 0)
                   :key="index"
                   class="prepared__inputItem form_item"
                 >
-                  <p>{{ el.name }}:</p>
-                  <input class="form-md" type="number" min="0" step="1000" v-model="el.value" />
-                  <label :data-domain="el.unit"></label>
+                  <!-- <p>{{ el.name }}:</p> -->
+                  <formInput
+                    :title="el.name"
+                    :type="'number'"
+                    :placeholder="0"
+                    :max="el.max"
+                    :step="1000"
+                    :unit="el.unit"
+                    v-model="el.value"
+                  ></formInput>
                 </div>
               </div>
             </div>
           </div>
         </div>
         <div class="result__block chart col-12 col-md-6 w-100">
-          <Pie></Pie>
-          <!-- <Chart class="chart__wrap" :trend-data="store.legendList"></Chart> -->
+          <Pie :completePercentage="completePercentage"></Pie>
           <ul class="chart__legendList">
             <li v-for="(el, index) in store.legendList" :key="index">
               <div>
