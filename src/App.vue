@@ -3,6 +3,7 @@ import Pie from '@/components/Pie.vue'
 import formInput from './components/formInput.vue'
 import { watch, computed, ref, reactive, nextTick } from 'vue'
 import { useStore } from './stores/store'
+import _ from 'lodash'
 
 const store = useStore()
 const form = reactive({
@@ -18,14 +19,6 @@ const form = reactive({
   freeSpend: 0,
   payType: 'ONCE',
   salary: 0,
-  //目前累積的退休準備
-  nowSaves: 0,
-  nowInvestment: 0,
-  nowOthers: 0,
-  //退休後每年為自己準備
-  annualMoney: 0,
-  annualRent: 0,
-  annualOthers: 0,
 })
 const btnList = [
   { name: 'fa-mars', value: 'MALE' },
@@ -41,23 +34,27 @@ const lifePlanInfo = [
   { food: '餐廳美食', transport: '擁有私家車', health: '自費雙人病房', travel: '國外輕旅行' },
   { food: '米其林餐廳', transport: '私人司機接送', health: '自費單人病房', travel: '國外秘境探險' },
 ]
-const setFormValue = async (key, value) => {
+const setFormValue = async (key, value, index, i) => {
   if (form[key] === value) return
   if (key === 'lifePlan') {
     form.perMoneySpend = value === 4 ? form.freeSpend : lifePlanType[value - 1].amount
   }
+  if (key === 'prepared') {
+    preparedList[index].inputList[i].value = value
+  }
   form[key] = value
 
-  const res = await store.getCostAfterRetire(form)
+  const res = debouncedGetCostAfterRetire()
   if (res) result.costAfterRetire = res
 }
+const debouncedGetCostAfterRetire = _.debounce(store.getCostAfterRetire, 500)
 watch(
   () => form.freeSpend,
   async (newVal) => {
     form.lifePlan = newVal < 70000 ? 1 : newVal >= 70000 && newVal < 100000 ? 2 : 3
     form.perMoneySpend = newVal
 
-    const res = await store.getCostAfterRetire(form)
+    const res = await debouncedGetCostAfterRetire()
     if (res) result.costAfterRetire = res
   }
 )
@@ -71,7 +68,7 @@ watch(
   () => form.payType,
   (newVal) => {
     if (newVal) {
-      getMoreDetail()
+      debouncedGetCalculation()
     }
   }
 )
@@ -79,13 +76,13 @@ watch(
   () => form.salary,
   (newVal) => {
     if (newVal > 0) {
-      getMoreDetail()
+      debouncedGetCalculation()
     }
   }
 )
-// TODO:開發用先預設打開
 const toggleResult = ref(false)
-const getMoreDetail = async () => {
+
+const getCalculation = async () => {
   const res = await store.getCalculation(form, preparedNow.value, preparedAnnual.value)
   if (!res) return
   if (res.errorMessage.length) return alert(res.errorMessage)
@@ -114,6 +111,10 @@ const getMoreDetail = async () => {
     animateValue(Math.round(ratio * 100))
   })
 }
+
+const debouncedGetCalculation = _.debounce(getCalculation, 500)
+
+
 const preparedList = reactive([
   {
     title: '目前累積的退休準備',
@@ -165,28 +166,29 @@ const preparedList = reactive([
   },
 ])
 const preparedNow = computed(() => {
+  console.log('preparedList:', preparedList.value)
   return preparedList[0].inputList.reduce((sum, b) => {
-    return sum + b.value
+    return sum + Number(b.value)
   }, 0)
 })
 watch(
   () => preparedNow.value,
   (newVal) => {
     if (newVal > 0) {
-      getMoreDetail()
+      debouncedGetCalculation()
     }
   }
 )
 const preparedAnnual = computed(() => {
   return preparedList[1].inputList.reduce((sum, b) => {
-    return sum + b.value
+    return sum + Number(b.value)
   }, 0)
 })
 watch(
   () => preparedAnnual.value,
   (newVal) => {
     if (newVal > 0) {
-      getMoreDetail()
+      debouncedGetCalculation()
     }
   }
 )
@@ -281,7 +283,7 @@ const animateValue = (end) => {
                   :max="600000"
                   :step="1000"
                   :unit="'元/月'"
-                  v-model="form.freeSpend"
+                  @setValue="setFormValue('freeSpend', $event)"
                 ></formInput>
               </div>
             </div>
@@ -310,7 +312,7 @@ const animateValue = (end) => {
     <div class="moreDetail">
       <h4>您總共需要：</h4>
       <span>{{ result.costAfterRetire }}元</span>
-      <button class="III-btn III-btn-outline--white" @click="getMoreDetail">
+      <button class="III-btn III-btn-outline--white" @click="debouncedGetCalculation">
         我想要更詳細的資料
       </button>
     </div>
@@ -339,12 +341,11 @@ const animateValue = (end) => {
               <formInput
                 :title="'每月薪資'"
                 :type="'number'"
-                :placeholder="0"
                 :min="22000"
                 :max="600000"
                 :step="1000"
                 :unit="'元/月'"
-                v-model="form.salary"
+                @setValue="setFormValue('salary', $event)"
               ></formInput>
             </div>
           </div>
@@ -360,19 +361,17 @@ const animateValue = (end) => {
               </div>
               <div v-if="item.toggle" class="prepared__inputBlock">
                 <div
-                  v-for="el in item.inputList"
+                  v-for="(el, i) in item.inputList"
                   :key="index"
                   class="prepared__inputItem form_item"
                 >
-                  <!-- <p>{{ el.name }}:</p> -->
                   <formInput
                     :title="el.name"
                     :type="'number'"
-                    :placeholder="0"
                     :max="el.max"
                     :step="1000"
                     :unit="el.unit"
-                    v-model="el.value"
+                    @setValue="setFormValue('prepared', $event, index, i)"
                   ></formInput>
                 </div>
               </div>

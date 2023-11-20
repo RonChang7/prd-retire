@@ -26,7 +26,7 @@
         :step="props.step"
         :min="props.min"
         :max="props.max"
-        @blur="$emit('setValue', val)"
+        @input="$emit('setValue', val)"
       />
       <label class="numberLabel" :data-domain="props.unit"></label>
     </template>
