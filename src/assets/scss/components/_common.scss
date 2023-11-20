@@ -239,7 +239,7 @@
         position: relative;
         width: 100%;
         height: 400px;
-  
+
         // transform:translateY(-30%);
         // height: 50%;
       }
@@ -300,8 +300,8 @@
   }
   .formItem {
     width: 100%;
-    color: white;
-    background-color: $color-primary-blue;
+    // color: white;
+    // background-color: $color-primary-blue;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -318,15 +318,31 @@
       text-align: center;
       padding-right: 20px;
     }
-    input,
+    .outline_w,
     .selectItem {
       width: 45%;
       color: #ffffff;
     }
-    label::after {
+    .outlineLabel::after {
       color: #ffffff;
       right: 10px;
       top: -10px;
+    }
+    .number_blue {
+      min-width: 110px;
+      width: 100%;
+      margin: 8px;
+      @media screen and (min-width: 360px) {
+        min-width: 150px;
+      }
+    }
+    .numberLabel::after {
+      width: 35px;
+      top: -12px;
+      right: 10px;
+      @media screen and (min-width: 360px) {
+        width: 50px;
+      }
     }
     .selectItem {
       display: flex;
