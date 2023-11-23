@@ -77,7 +77,6 @@ const val = ref(null)
 watch(
   () => val.value,
   (newVal) => {
-    console.log('val:', newVal)
     if (newVal > props.max) {
       val.value = props.max
     } else if (newVal < props.min) {

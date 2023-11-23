@@ -1,11 +1,15 @@
 import axios from 'axios'
+import Swal from 'sweetalert2'
+
 export default {
   handleError(err) {
-    console.log('err:', err)
+    Swal.fire({
+      titleText: 'API Error',
+      text: err,
+      icon: 'error',
+    })
   },
-  // TODO:呼喚時機：現在年齡、預計退休年齡、性別、退休後每個月想花多少錢變動時
   async getCostAfterRetire(form) {
-    console.log('form:', form)
     try {
       const { sex, retireAge, perMoneySpend } = form
       const res = await axios({

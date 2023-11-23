@@ -1,5 +1,5 @@
 <template>
-  <div id="chart" style="width: 550px"></div>
+  <div ref="chartContainer" id="chart"></div>
   <div class="chart__complete">
     <input hidden id="ratio" />
     <p class="p-none">
@@ -10,7 +10,7 @@
 </template>
 
 <script setup>
-import { defineEmits, watch, onMounted } from 'vue'
+import { defineEmits, watch, onMounted, onBeforeUnmount, nextTick, ref } from 'vue'
 import * as echarts from 'echarts/core'
 import { TooltipComponent, LegendComponent } from 'echarts/components'
 import { PieChart } from 'echarts/charts'
@@ -27,38 +27,41 @@ const props = defineProps({
     default: 0,
   },
 })
-
-let pie = null
+const chartContainer = ref(null)
+let chartInstance = null
+// let pie = null
 onMounted(function () {
-  pie = createPie()
+  nextTick(() => {
+    initPie()
+  })
 })
-const createPie = () => {
-  let chartDom = document.getElementById('chart')
-  let myChart = echarts.init(chartDom)
+const initPie = () => {
+  if (!chartContainer.value) {
+    return
+  }
+
+  // 檢查是否已有圖表實例
+  if (chartInstance) {
+    chartInstance.dispose()
+  }
+
+  chartInstance = echarts.init(chartContainer.value)
+  window.addEventListener('resize', function () {
+    chartInstance.resize()
+  })
   let option = {
     tooltip: {
       trigger: 'item',
     },
-    legend: {
-      top: '5%',
-      left: 'center',
-      // doesn't perfectly work with our tricks, disable it
-      selectedMode: false,
-    },
     series: [
       {
-        // name: '',
         type: 'pie',
-        radius: ['60%', '70%'],
-        center: ['40%', '100%'],
+        radius: ['120%', '130%'],
+        center: ['50%', '80%'],
         // adjust the start angle
         startAngle: 180,
         label: {
           show: false,
-          // formatter(param) {
-          //   // correct the percentage
-          //   return param.name + ' (' + param.percent * 2 + '%)'
-          // },
         },
         data: [
           store.legendList[0],
@@ -67,7 +70,7 @@ const createPie = () => {
           store.legendList[3],
           {
             // make an record to fill the bottom 50%
-            value: 0,
+            value: store.legendList.reduce((acc, cur) => acc + cur.value, 0),
             itemStyle: {
               // stop the chart from rendering this piece
               color: 'none',
@@ -84,30 +87,30 @@ const createPie = () => {
     ],
   }
 
-  option && myChart.setOption(option)
-  // emit('percentRun')
-
-  return myChart
+  // option && myChart.setOption(option)
+  chartInstance.setOption(option)
 }
-
+onBeforeUnmount(() => {
+  if (chartInstance) {
+    chartInstance.dispose()
+  }
+})
 /* ---------------------------------- 更新圖表 ---------------------------------- */
 watch(
   () => store.legendList,
   (newVal) => {
-    if (pie) {
-      createPie()
+    if (newVal[3].value > 0) {
+      initPie()
     }
   },
-  { deep: true, immediate: true }
+  { deep: true }
 )
 
-/* --------------------------------- 有值才能碰 --------------------------------- */
+/* --------------------------------- 有值才畫 --------------------------------- */
+
 // const haveData = computed(() => {
-//   return Object.keys(trendData.value).length > 0 ? true : false
+//   return store.legendList[3].value > 0 ? true : false
 // })
-window.addEventListener('resize', function () {
-  myChart.resize()
-})
 </script>
 
 <style></style>

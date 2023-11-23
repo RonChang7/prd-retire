@@ -70,8 +70,6 @@
 }
 
 .list1-leave-active {
-  // TODO: 用 absolute 動畫會更自然，但下方的 element 會擠上來，
-  // position: absolute;
   transition: all 0.3s;
 }
 

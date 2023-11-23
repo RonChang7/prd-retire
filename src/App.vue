@@ -4,14 +4,14 @@ import formInput from './components/formInput.vue'
 import { watch, computed, ref, reactive, nextTick } from 'vue'
 import { useStore } from './stores/store'
 import _ from 'lodash'
+import Swal from 'sweetalert2'
 
 const store = useStore()
 const form = reactive({
   //個人資料
-  //TODO:開發用先預設 33歲    44歲    33歲
-  age: 33,
-  retireAge: 44,
-  workAge: 33,
+  age: 0,
+  retireAge: 0,
+  workAge: 0,
   sex: 'MALE',
   //退休後每個月想花多少
   lifePlan: 1,
@@ -34,6 +34,9 @@ const lifePlanInfo = [
   { food: '餐廳美食', transport: '擁有私家車', health: '自費雙人病房', travel: '國外輕旅行' },
   { food: '米其林餐廳', transport: '私人司機接送', health: '自費單人病房', travel: '國外秘境探險' },
 ]
+const formatNumberWithCommas = (number) => {
+  return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+}
 const setFormValue = async (key, value, index, i) => {
   if (form[key] === value) return
   if (key === 'lifePlan') {
@@ -44,10 +47,15 @@ const setFormValue = async (key, value, index, i) => {
   }
   form[key] = value
 
-  const res = debouncedGetCostAfterRetire()
-  if (res) result.costAfterRetire = res
+  debouncedGetCostAfterRetire()
 }
-const debouncedGetCostAfterRetire = _.debounce(store.getCostAfterRetire, 500)
+const getCostAfterRetireFromApi = async () => {
+  const res = await store.getCostAfterRetire(form)
+  if (!res) return
+  return (result.costAfterRetire = res)
+}
+const debouncedGetCostAfterRetire = _.debounce(getCostAfterRetireFromApi, 500)
+
 watch(
   () => form.freeSpend,
   async (newVal) => {
@@ -82,13 +90,20 @@ watch(
 )
 const toggleResult = ref(false)
 
-const getCalculation = async () => {
+const getCalculationFromApi = async () => {
   const res = await store.getCalculation(form, preparedNow.value, preparedAnnual.value)
   if (!res) return
-  if (res.errorMessage.length) return alert(res.errorMessage)
+  if (res.errorMessage.length) {
+    return Swal.fire({
+      titleText: '請重新輸入',
+      text: res.errorMessage[0],
+      icon: 'warning',
+    })
+  }
   const { laborProtectionAmount, laborRebateAmount, stillLackAmount, saveAmountPerMonth } = res
-  result.stillLackAmount = stillLackAmount > 0 ? stillLackAmount : 0
-  result.saveAmountPerMonth = saveAmountPerMonth > 0 ? saveAmountPerMonth : 0
+  result.stillLackAmount = stillLackAmount > 0 ? formatNumberWithCommas(stillLackAmount) : 0
+  result.saveAmountPerMonth =
+    saveAmountPerMonth > 0 ? formatNumberWithCommas(saveAmountPerMonth) : 0
   const mappingValues = [preparedNow, laborProtectionAmount, laborRebateAmount, stillLackAmount]
   store.legendList.forEach((item, index) => {
     item.value = mappingValues[index]
@@ -97,7 +112,6 @@ const getCalculation = async () => {
     return sum + b.value
   }, 0)
   let ratio = (total - store.legendList[3].value) / total
-  console.log('ratio:', ratio)
 
   if (!toggleResult.value) {
     toggleResult.value = true
@@ -112,8 +126,7 @@ const getCalculation = async () => {
   })
 }
 
-const debouncedGetCalculation = _.debounce(getCalculation, 500)
-
+const debouncedGetCalculation = _.debounce(getCalculationFromApi, 500)
 
 const preparedList = reactive([
   {
@@ -166,7 +179,6 @@ const preparedList = reactive([
   },
 ])
 const preparedNow = computed(() => {
-  console.log('preparedList:', preparedList.value)
   return preparedList[0].inputList.reduce((sum, b) => {
     return sum + Number(b.value)
   }, 0)
@@ -195,7 +207,6 @@ watch(
 const completePercentage = ref(0)
 // 數字從0開始跑的動畫 卡卡的
 const animateValue = (end) => {
-  console.log('end:', end)
   if (end === 0) return
   if (end >= 100) return (completePercentage.value = 100)
   let current = 0
@@ -209,6 +220,8 @@ const animateValue = (end) => {
     }
   }, stepTime)
 }
+//TODO: 假資料
+const isShowPDF = ref(true)
 </script>
 <template>
   <div class="wrap">
@@ -236,7 +249,6 @@ const animateValue = (end) => {
           <formInput
             :title="'預計退休年齡'"
             :subTitle="'通常退休為65歲'"
-            :min="35"
             :max="75"
             :type="'number-outline'"
             @setValue="setFormValue('retireAge', $event)"
@@ -245,7 +257,6 @@ const animateValue = (end) => {
           <formInput
             :title="'開始工作年齡'"
             :type="'number-outline'"
-            :min="18"
             :max="40"
             @setValue="setFormValue('workAge', $event)"
             :unit="'歲'"
@@ -271,7 +282,7 @@ const animateValue = (end) => {
               @click="setFormValue('lifePlan', item.id)"
             >
               <span>{{ item.title }}</span>
-              <p>{{ item.amount }} 元/月</p>
+              <p>{{ formatNumberWithCommas(item.amount) }} 元/月</p>
             </div>
             <div class="retire__btn">
               <span>人生自己填</span>
@@ -311,7 +322,7 @@ const animateValue = (end) => {
     </div>
     <div class="moreDetail">
       <h4>您總共需要：</h4>
-      <span>{{ result.costAfterRetire }}元</span>
+      <span>{{ formatNumberWithCommas(result.costAfterRetire) }}元</span>
       <button class="III-btn III-btn-outline--white" @click="debouncedGetCalculation">
         我想要更詳細的資料
       </button>
@@ -341,7 +352,6 @@ const animateValue = (end) => {
               <formInput
                 :title="'每月薪資'"
                 :type="'number'"
-                :min="22000"
                 :max="600000"
                 :step="1000"
                 :unit="'元/月'"
@@ -356,8 +366,10 @@ const animateValue = (end) => {
                 @click="item.toggle = !item.toggle"
               >
                 <p>{{ item.title }}</p>
-                <p v-if="index === 0" class="prepared__money">{{ preparedNow }}元</p>
-                <p v-else class="prepared__money">{{ preparedAnnual }}元</p>
+                <p v-if="index === 0" class="prepared__money">
+                  {{ formatNumberWithCommas(preparedNow) }}元
+                </p>
+                <p v-else class="prepared__money">{{ formatNumberWithCommas(preparedAnnual) }}元</p>
               </div>
               <div v-if="item.toggle" class="prepared__inputBlock">
                 <div
@@ -379,14 +391,14 @@ const animateValue = (end) => {
           </div>
         </div>
         <div class="result__block chart col-12 col-md-6 w-100">
-          <Pie :completePercentage="completePercentage"></Pie>
+          <Pie v-if="toggleResult" :completePercentage="completePercentage"></Pie>
           <ul class="chart__legendList">
             <li v-for="(el, index) in store.legendList" :key="index">
               <div>
                 <span class="legend" :style="`background:${el.itemStyle.color}`"> </span>
                 <span>{{ el.name }}</span>
               </div>
-              <p>{{ el.value }} 元</p>
+              <p>{{ formatNumberWithCommas(el.value) }} 元</p>
             </li>
           </ul>
         </div>
@@ -422,7 +434,7 @@ const animateValue = (end) => {
           分享試算結果：<a href="#"><i class="fab fa-line"></i></a>
           <a href="#"><i class="fab fa-facebook-square"></i></a>
         </p>
-        <button class="III-btn btn-square III-btn-outline--mainblue" onclick="window.print()">
+        <button class="III-btn btn-square III-btn-outline--mainblue" @click="window.print()">
           <i class="fas fa-print"></i> 列印試算結果
         </button>
       </div>
