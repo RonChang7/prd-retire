@@ -50,6 +50,7 @@ const setFormValue = async (key, value, index, i) => {
   debouncedGetCostAfterRetire()
 }
 const getCostAfterRetireFromApi = async () => {
+  if (form.retireAge === 0) return
   const res = await store.getCostAfterRetire(form)
   if (!res) return
   return (result.costAfterRetire = res)
@@ -89,16 +90,41 @@ watch(
   }
 )
 const toggleResult = ref(false)
-
 const getCalculationFromApi = async () => {
+  if (form.retireAge === 0 || form.workAge === 0) {
+    Swal.fire({
+      titleText: '請重新輸入',
+      text: '你沒有完整輸入年齡',
+      icon: 'warning',
+    })
+    return
+  }
+  if (form.workAge < 18) {
+    Swal.fire({
+      titleText: '請重新輸入',
+      text: '開始工作年齡不得小於18歲',
+      icon: 'warning',
+    })
+    return
+  }
+  if (form.workAge >= form.retireAge) {
+    Swal.fire({
+      titleText: '請重新輸入',
+      text: '開始工作年齡不得大於或等於預計退休年齡',
+      icon: 'warning',
+    })
+    return
+  }
+
   const res = await store.getCalculation(form, preparedNow.value, preparedAnnual.value)
   if (!res) return
   if (res.errorMessage.length) {
-    return Swal.fire({
+    Swal.fire({
       titleText: '請重新輸入',
       text: res.errorMessage[0],
       icon: 'warning',
     })
+    return
   }
   const { laborProtectionAmount, laborRebateAmount, stillLackAmount, saveAmountPerMonth } = res
   result.stillLackAmount = stillLackAmount > 0 ? formatNumberWithCommas(stillLackAmount) : 0
@@ -220,8 +246,9 @@ const animateValue = (end) => {
     }
   }, stepTime)
 }
-//TODO: 假資料
-const isShowPDF = ref(true)
+const printPDF = () => {
+  window.print()
+}
 </script>
 <template>
   <div class="wrap">
@@ -327,9 +354,9 @@ const isShowPDF = ref(true)
         我想要更詳細的資料
       </button>
     </div>
-    <div id="checkResult" v-show="toggleResult" class="result inner III-block-white">
-      <h4>查看你的結果</h4>
-      <div class="III-flex result__wrap">
+    <div id="checkResult" v-show="toggleResult" class="result inner">
+      <div class="III-flex result__wrap III-block-white">
+        <h4>查看你的結果</h4>
         <div class="result__block col-12 col-md-6">
           <div class="result__btns">
             <button
@@ -434,7 +461,7 @@ const isShowPDF = ref(true)
           分享試算結果：<a href="#"><i class="fab fa-line"></i></a>
           <a href="#"><i class="fab fa-facebook-square"></i></a>
         </p>
-        <button class="III-btn btn-square III-btn-outline--mainblue" @click="window.print()">
+        <button class="III-btn btn-square III-btn-outline--mainblue" @click="printPDF">
           <i class="fas fa-print"></i> 列印試算結果
         </button>
       </div>

@@ -56,7 +56,7 @@ const initPie = () => {
     series: [
       {
         type: 'pie',
-        radius: ['120%', '130%'],
+        radius: ['120%', '135%'],
         center: ['50%', '80%'],
         // adjust the start angle
         startAngle: 180,

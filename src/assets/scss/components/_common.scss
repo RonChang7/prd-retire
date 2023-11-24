@@ -1,9 +1,9 @@
-input[type="number"] {
+input[type='number'] {
   -moz-appearance: textfield; /* Firefox */
-  appearance: textfield;      /* Chrome, Safari, Edge, and other browsers */
+  appearance: textfield; /* Chrome, Safari, Edge, and other browsers */
 }
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
@@ -165,14 +165,16 @@ input[type="number"]::-webkit-outer-spin-button {
     }
   }
   .result {
-    margin: -12px auto;
+    margin: -50px auto 0;
     text-align: center;
 
     h4 {
+      width: 100%;
       text-align: center;
+      margin-bottom: 20px;
     }
     &__wrap {
-      margin-top: 32px;
+      // margin-top: -32px;
     }
     &__block {
       padding: 10px;
@@ -267,13 +269,13 @@ input[type="number"]::-webkit-outer-spin-button {
         right: 0;
         bottom: 0;
         @media screen and (min-width: 450px) {
-          top:  200px;
+          top: 200px;
         }
         @media screen and (min-width: 768px) {
-          top:  100px;
+          top: 100px;
         }
         @media screen and (min-width: 900px) {
-          top:  200px;
+          top: 200px;
         }
         p {
           text-align: center;
