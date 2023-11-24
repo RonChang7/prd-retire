@@ -18,8 +18,9 @@ export default defineConfig({
   },
   build: {
     outDir:
-      import.meta.Mode === 'production' ? path.resolve('../../resources/prd-reture') : 'dist',
+      import.meta.Mode === 'production' ? path.resolve('../../resources/prd-retire') : 'dist',
     assetsDir: '',
+    sourcemap: false,
     rollupOptions: {
       input: {
         // index頁
