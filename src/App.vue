@@ -152,9 +152,11 @@ const getCalculationFromApi = async () => {
   result.stillLackAmount = stillLackAmount > 0 ? formatNumberWithCommas(stillLackAmount) : 0
   result.saveAmountPerMonth =
     saveAmountPerMonth > 0 ? formatNumberWithCommas(saveAmountPerMonth) : 0
-  const mappingValues = [preparedNow, laborProtectionAmount, laborRebateAmount, stillLackAmount]
+  const mappingValues = [laborProtectionAmount, laborRebateAmount, stillLackAmount]
   store.legendList.forEach((item, index) => {
-    item.value = mappingValues[index]
+    if (index === 0) item.value = preparedNow.value
+    else item.value = mappingValues[index - 1]
+    if (item.value < 0) item.value = 0
   })
   let total = store.legendList.reduce((sum, b) => {
     return sum + b.value

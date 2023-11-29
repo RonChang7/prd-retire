@@ -29,7 +29,41 @@ const props = defineProps({
 })
 const chartContainer = ref(null)
 let chartInstance = null
-// let pie = null
+let option = {
+  tooltip: {
+    trigger: 'item',
+  },
+  series: [
+    {
+      type: 'pie',
+      radius: ['200%', '175%'],
+      center: ['50%', '100%'],
+      // adjust the start angle
+      startAngle: 180,
+      endAngle: 360,
+      label: {
+        show: false,
+      },
+      data: [
+        ...store.legendList,
+        {
+          // make an record to fill the bottom 50%
+          value: store.legendList.reduce((acc, cur) => acc + cur.value, 0),
+          itemStyle: {
+            // stop the chart from rendering this piece
+            color: 'none',
+            decal: {
+              symbol: 'none',
+            },
+          },
+          label: {
+            show: false,
+          },
+        },
+      ],
+    },
+  ],
+}
 onMounted(function () {
   nextTick(() => {
     initPie()
@@ -49,45 +83,6 @@ const initPie = () => {
   window.addEventListener('resize', function () {
     chartInstance.resize()
   })
-  let option = {
-    tooltip: {
-      trigger: 'item',
-    },
-    series: [
-      {
-        type: 'pie',
-        radius: ['120%', '135%'],
-        center: ['50%', '80%'],
-        // adjust the start angle
-        startAngle: 180,
-        label: {
-          show: false,
-        },
-        data: [
-          store.legendList[0],
-          store.legendList[1],
-          store.legendList[2],
-          store.legendList[3],
-          {
-            // make an record to fill the bottom 50%
-            value: store.legendList.reduce((acc, cur) => acc + cur.value, 0),
-            itemStyle: {
-              // stop the chart from rendering this piece
-              color: 'none',
-              decal: {
-                symbol: 'none',
-              },
-            },
-            label: {
-              show: false,
-            },
-          },
-        ],
-      },
-    ],
-  }
-
-  // option && myChart.setOption(option)
   chartInstance.setOption(option)
 }
 onBeforeUnmount(() => {
@@ -99,18 +94,12 @@ onBeforeUnmount(() => {
 watch(
   () => store.legendList,
   (newVal) => {
-    if (newVal[3].value > 0) {
-      initPie()
+    if (chartInstance) {
+      chartInstance.setOption(option, true)
     }
   },
   { deep: true }
 )
-
-/* --------------------------------- 有值才畫 --------------------------------- */
-
-// const haveData = computed(() => {
-//   return store.legendList[3].value > 0 ? true : false
-// })
 </script>
 
 <style></style>
