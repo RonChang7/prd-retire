@@ -14,6 +14,9 @@ const form = reactive({
   workAge: 0,
   sex: 'MALE',
   //退休後每個月想花多少
+  //style 亮燈
+  lifeClick: 1,
+  //資料切換
   lifePlan: 1,
   perMoneySpend: 40000,
   freeSpend: 0,
@@ -28,6 +31,7 @@ const lifePlanType = [
   { id: 1, title: '平靜樂活人生包', amount: 40000 },
   { id: 2, title: '偶爾炫耀歡樂包', amount: 70000 },
   { id: 3, title: '豪華享樂富裕包', amount: 100000 },
+  { id: 4, title: '人生自己填', amount: 0 },
 ]
 const lifePlanInfo = [
   { food: '家庭小吃', transport: '多半是大眾運輸', health: '健保補助病房', travel: '國內走透透' },
@@ -40,7 +44,7 @@ const formatNumberWithCommas = (number) => {
 const setFormValue = async (key, value, index, i) => {
   if (form[key] === value) return
   if (key === 'lifePlan') {
-    form.perMoneySpend = value === 4 ? form.freeSpend : lifePlanType[value - 1].amount
+    form.perMoneySpend = lifePlanType[value - 1].amount
   }
   if (key === 'prepared') {
     preparedList[index].inputList[i].value = value
@@ -48,6 +52,24 @@ const setFormValue = async (key, value, index, i) => {
   form[key] = value
 
   debouncedGetCostAfterRetire()
+}
+const chooseLife = (item, i) => {
+  setFormValue('perMoneySpend', item.amount)
+  form.lifeClick = i + 1
+  switch (form.perMoneySpend) {
+    case 40000:
+      form.lifePlan = 1
+      break
+    case 70000:
+      form.lifePlan = 2
+      break
+    case 100000:
+      form.lifePlan = 3
+      break
+
+    default:
+      break
+  }
 }
 const getCostAfterRetireFromApi = async () => {
   if (form.retireAge === 0) return
@@ -303,17 +325,14 @@ const printPDF = () => {
           <div class="retire__subWrap">
             <div
               class="retire__btn"
-              :class="{ 'retire__btn--active': form.lifePlan === item.id }"
+              :class="{ 'retire__btn--active': form.lifeClick === item.id }"
               v-for="(item, index) in lifePlanType"
               :key="index"
-              @click="setFormValue('lifePlan', item.id)"
+              @click="chooseLife(item, index)"
             >
               <span>{{ item.title }}</span>
-              <p>{{ formatNumberWithCommas(item.amount) }} 元/月</p>
-            </div>
-            <div class="retire__btn">
-              <span>人生自己填</span>
-              <div class="form_item">
+              <p v-if="item.id < 4">{{ formatNumberWithCommas(item.amount) }} 元/月</p>
+              <div v-else class="form_item">
                 <formInput
                   :type="'number'"
                   :placeholder="0"
