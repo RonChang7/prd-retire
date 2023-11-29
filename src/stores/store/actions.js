@@ -3,11 +3,7 @@ import Swal from 'sweetalert2'
 
 export default {
   handleError(err) {
-    Swal.fire({
-      titleText: 'API Error',
-      text: err,
-      icon: 'error',
-    })
+    console.error('API Error:', err)
   },
   async getCostAfterRetire(form) {
     try {
